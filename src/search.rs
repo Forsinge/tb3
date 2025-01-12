@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+
 use crate::dict::*;
 use crate::grid::{Grid, IDEAL_POINTS, WORD_BONUSES};
 
@@ -11,11 +12,12 @@ pub fn search_words(
     space: &mut Vec<(u64, usize)>,
     space_start: usize,
     winning_lengths: [bool; 13],
+    idx_stack: &mut [usize; 128],
+    seq_stack: &mut [u64; 128],
+    dict_stack: &mut [usize; 128],
 ) -> usize {
     let mut stack_idx = 0;
-    let mut dict_stack = [0; 128];
-    let mut grid_stack = [0; 128];
-    let mut word_stack_idx = 0;
+    let mut word_stack_idx = space_start;
     let mut remaining = grid.remaining;
 
     while remaining != 0 {
@@ -24,31 +26,28 @@ pub fn search_words(
         remaining ^= bit;
 
         dict_stack[0] = dict[0].children[grid.letters[index]];
-        grid_stack[0] = bit;
+        seq_stack[0] = bit;
+        idx_stack[0] = index;
         stack_idx += 1_usize;
 
         while stack_idx != 0 {
             stack_idx -= 1;
-            let grid_bit = grid_stack[stack_idx];
-            grid.marks ^= grid_bit;
 
-            if grid.marks & grid_bit == 0 {
-                continue;
-            }
+            let grid_seq = seq_stack[stack_idx];
+            let grid_idx = idx_stack[stack_idx];
+            let dict_idx = dict_stack[stack_idx];
+            let node = &dict[dict_idx];
 
-            let node = &dict[dict_stack[stack_idx]];
-            if node.connections & 1 == 1 && winning_lengths[grid.marks.count_ones() as usize] {
-                space[space_start + word_stack_idx] = (grid.marks, dict_stack[stack_idx]);
+            if node.connections & 1 == 1 && winning_lengths[grid_seq.count_ones() as usize] {
+                space[word_stack_idx] = (grid_seq, dict_idx);
                 word_stack_idx += 1;
             }
-            stack_idx += 1;
 
-            let grid_idx = grid_bit.trailing_zeros() as usize;
-            let mut adjacency = grid.adjacency[grid_idx] & !grid.marks;
-
-            if adjacency == 0 || node.connections & grid.adjacency_ords[grid_idx] == 0 {
+            if node.connections & grid.adjacency_ords[grid_idx] == 0 {
                 continue;
             }
+
+            let mut adjacency = grid.adjacency[grid_idx] & !grid_seq;
 
             while adjacency != 0 {
                 let zeros = adjacency.trailing_zeros() as usize;
@@ -56,7 +55,9 @@ pub fn search_words(
                 let ord = grid.letters[zeros];
 
                 dict_stack[stack_idx] = node.children[ord];
-                grid_stack[stack_idx] = adj_bit;
+                idx_stack[stack_idx] = zeros;
+                seq_stack[stack_idx] = grid_seq | adj_bit;
+
                 stack_idx += (node.connections >> ord) & 1;
                 adjacency ^= adj_bit;
             }
@@ -75,7 +76,10 @@ pub fn search_grid(
     plays: &mut [usize; 32],
     node_count: &mut u64,
     word_stack: &mut Vec<(u64, usize)>,
-    cache: &mut HashMap<u64, u8>
+    cache: &mut HashMap<u64, u8>,
+    dict_stack: &mut [usize; 128],
+    idx_stack: &mut [usize; 128],
+    seq_stack: &mut [u64; 128],
 ) {
     *node_count += 1;
 
@@ -109,9 +113,14 @@ pub fn search_grid(
     }
 
     let start = plays_idx * WORD_STACK_DIM;
-    let end = start + search_words(grid, dict, word_stack, start, winning);
-    let slice = &mut word_stack[start..end];
+    let end = search_words(grid, dict, word_stack, start, winning, idx_stack, seq_stack, dict_stack);
 
+    if start == end {
+        cache.insert(grid.remaining, 0);
+        return;
+    }
+
+    let slice = &mut word_stack[start..end];
     slice.sort_unstable_by(|(a, _), (b, _)| b.count_ones().cmp(&a.count_ones()).then(b.cmp(&a)));
     word_stack[end] = (0, 0);
 
@@ -136,8 +145,13 @@ pub fn search_grid(
             node_count,
             word_stack,
             cache,
+            dict_stack,
+            idx_stack,
+            seq_stack,
         );
         grid.undo(word);
-        cache.insert(grid.remaining, *max_points - points);
     }
+
+
+    cache.insert(grid.remaining, *max_points - points);
 }

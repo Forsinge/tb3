@@ -35,7 +35,6 @@ pub struct Grid {
     pub letters: [usize; 64],
     pub adjacency: [u64; 64],
     pub adjacency_ords: [usize; 64],
-    pub marks: u64,
     pub remaining: u64,
 }
 
@@ -65,13 +64,11 @@ impl Grid {
 
         let adjacency = [0; 64];
         let adjacency_ords = [0; 64];
-        let marks = 0;
 
         let mut grid = Self {
             letters,
             adjacency,
             adjacency_ords,
-            marks,
             remaining,
         };
 

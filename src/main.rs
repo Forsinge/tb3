@@ -8,7 +8,6 @@ use crate::dict::get_dict_tree;
 use crate::search::{search_grid, WORD_STACK_DEPTH, WORD_STACK_DIM};
 use grid::*;
 use std::time::Instant;
-use std::io::stdin;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,10 +16,12 @@ fn main() {
         return;
     }
 
+    /*
     println!("Enter grid. Empty line to finish:");
 
     let mut grid_rows = Vec::new();
     let mut row_buf = String::new();
+
 
     loop {
         if let Err(e) = stdin().read_line(&mut row_buf) {
@@ -36,7 +37,10 @@ fn main() {
         row_buf.clear();
     }
 
-    let grid_input = grid_rows.join("\n");
+    let grid_input = grid_rows.join("\n");*/
+    //let grid_input = "GJKKSÄ\nKOIOVS\nIKOSAM\nSEREHA\nKVGLGL\nEMNTUN";
+    let grid_input = "MRATL\nAETTY\nKDRAK\nTAKTE\nYTCNS\nPALMA";
+    //let grid_input = "TGNRR\nAAOÅE\nUNBIÄ\nDGHND\nVEAAT";
     let dict_tree;
 
     match get_dict_tree(&grid_input, &args[1]) {
@@ -57,6 +61,10 @@ fn main() {
     let mut cache = HashMap::with_capacity(65536);
     let clock = Instant::now();
 
+    let mut dict_stack = [0; 128];
+    let mut idx_stack = [0; 128];
+    let mut seq_stack = [0; 128];
+
     search_grid(
         &mut grid,
         &dict_tree,
@@ -67,6 +75,9 @@ fn main() {
         &mut node_count,
         &mut word_stack,
         &mut cache,
+        &mut dict_stack,
+        &mut idx_stack,
+        &mut seq_stack,
     );
 
     println!();
