@@ -2,11 +2,11 @@ mod dict;
 mod grid;
 mod search;
 
+use crate::dict::get_dict_tree;
+use crate::search::{solve_puzzle, WORD_STACK_DEPTH, WORD_STACK_DIM};
+use grid::*;
 use std::collections::HashMap;
 use std::env;
-use crate::dict::get_dict_tree;
-use crate::search::{search_grid, WORD_STACK_DEPTH, WORD_STACK_DIM};
-use grid::*;
 use std::time::Instant;
 
 fn main() {
@@ -16,16 +16,14 @@ fn main() {
         return;
     }
 
-    /*
     println!("Enter grid. Empty line to finish:");
 
     let mut grid_rows = Vec::new();
     let mut row_buf = String::new();
 
-
     loop {
-        if let Err(e) = stdin().read_line(&mut row_buf) {
-            eprintln!("Unable to read grid: {e}");
+        if let Err(e) = std::io::stdin().read_line(&mut row_buf) {
+            eprintln!("Unable to read input: {e}");
             return;
         }
 
@@ -33,23 +31,19 @@ fn main() {
             break;
         }
 
-        grid_rows.push(row_buf.trim().to_string());
+        grid_rows.push(row_buf.trim_end_matches(&['\n','\r']).to_uppercase());
         row_buf.clear();
     }
 
-    let grid_input = grid_rows.join("\n");*/
-    //let grid_input = "GJKKSÄ\nKOIOVS\nIKOSAM\nSEREHA\nKVGLGL\nEMNTUN";
-    let grid_input = "MRATL\nAETTY\nKDRAK\nTAKTE\nYTCNS\nPALMA";
-    //let grid_input = "TGNRR\nAAOÅE\nUNBIÄ\nDGHND\nVEAAT";
-    let dict_tree;
+    let grid_input = grid_rows.join("\n");
 
-    match get_dict_tree(&grid_input, &args[1]) {
-        Ok(tree) => dict_tree = tree,
+    let dict_tree = match get_dict_tree(&grid_input, &args[1]) {
+        Ok(tree) => tree,
         Err(e) => {
             eprintln!("Could not create dictionary: {e}");
             return;
         }
-    }
+    };
 
     let mut grid = Grid::new(&grid_input);
     let points = 0;
@@ -57,7 +51,7 @@ fn main() {
     let mut max_points = 10;
     let mut plays = [0; 32];
     let mut node_count = 0;
-    let mut word_stack = vec![(0, 0); WORD_STACK_DEPTH * WORD_STACK_DIM];
+    let mut word_stack = [(0, 0); WORD_STACK_DEPTH * WORD_STACK_DIM];
     let mut cache = HashMap::with_capacity(65536);
     let clock = Instant::now();
 
@@ -65,7 +59,7 @@ fn main() {
     let mut idx_stack = [0; 128];
     let mut seq_stack = [0; 128];
 
-    search_grid(
+    solve_puzzle(
         &mut grid,
         &dict_tree,
         points,

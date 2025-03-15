@@ -9,8 +9,9 @@ const ORD_OFFSET: u64 = 64;
 
 #[derive(Default)]
 pub struct Node {
-    pub children: [usize; 31],
+    pub children: [usize; 30],
     pub connections: usize,
+    pub len: usize,
 }
 
 pub fn get_dict_tree(grid_input: &str, dictionary_path: &str) -> Result<Vec<Node>, io::Error> {
@@ -18,7 +19,7 @@ pub fn get_dict_tree(grid_input: &str, dictionary_path: &str) -> Result<Vec<Node
     let file = File::open(dictionary_path)?;
     let mut words = Vec::new();
 
-    for line in io::BufReader::new(file).lines().flatten() {
+    for line in io::BufReader::new(file).lines().map_while(Result::ok) {
         let len = line.chars().count();
         let mut include = true;
         let mut letters = filtered.clone();
@@ -44,22 +45,24 @@ pub fn get_dict_tree(grid_input: &str, dictionary_path: &str) -> Result<Vec<Node
             let ord = to_bits(ch);
             let bit = 1 << ord;
             let len = tree.len();
+            let curr = tree.get_mut(curr_idx).unwrap();
 
-            if tree.get(curr_idx).unwrap().connections & bit == 0 {
-                tree.get_mut(curr_idx).unwrap().connections |= bit;
-                tree.get_mut(curr_idx).unwrap().children[ord as usize] = len;
+            if curr.connections & bit == 0 {
+                curr.connections |= bit;
+                curr.children[ord as usize] = len;
                 tree.push(Node::default());
             }
 
             curr_idx = tree.get(curr_idx).unwrap().children[ord as usize];
         }
         tree[curr_idx].connections |= 1;
+        tree[curr_idx].len = word.chars().count();
     }
 
     Ok(tree)
 }
 
-pub fn reconstruct_word(dict: &Vec<Node>, idx: usize) -> String {
+pub fn reconstruct_word(dict: &[Node], idx: usize) -> String {
     let mut s = String::new();
     let mut i = 0;
     while i < idx {

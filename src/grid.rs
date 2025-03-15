@@ -3,9 +3,8 @@ use crate::dict::to_bits;
 pub const WORD_BONUSES: [u8; 13] = [0, 0, 0, 0, 1, 3, 5, 8, 10, 12, 14, 15, 16];
 
 pub const IDEAL_POINTS: [u8; 37] = [
-    0, 0, 0, 0, 1, 3, 5, 8, 10, 12, 14, 15, 16, 16,
-    16, 18, 20, 22, 24, 26, 28, 29, 30, 31, 32, 32,
-    34, 36, 38, 40, 42, 43, 44, 45, 46, 47, 48
+    0, 0, 0, 0, 1, 3, 5, 8, 10, 12, 14, 15, 16, 16, 16, 18, 20, 22, 24, 26, 28, 29, 30, 31, 32, 32,
+    34, 36, 38, 40, 42, 43, 44, 45, 46, 47, 48,
 ];
 
 pub const COLUMN_MASKS: [u64; 8] = [
@@ -30,7 +29,6 @@ pub const LOWEST_BITS: [u64; 8] = [
     0x8000000000000080,
 ];
 
-#[derive(Debug, Clone)]
 pub struct Grid {
     pub letters: [usize; 64],
     pub adjacency: [u64; 64],
@@ -72,12 +70,11 @@ impl Grid {
             remaining,
         };
 
-        grid.play(0);
+        grid.recompute();
         grid
     }
 
-    pub fn play(&mut self, seq: u64) {
-        self.remaining ^= seq;
+    pub fn recompute(&mut self) {
         for i in 0..64 {
             let bit = 1 << i;
             if bit & self.remaining == 0 {
@@ -153,7 +150,6 @@ impl Grid {
             }
 
             self.adjacency[i] = adjacency;
-
             let mut adjacency_ords = 0;
             while adjacency != 0 {
                 let zeros = adjacency.trailing_zeros() as usize;
@@ -166,7 +162,7 @@ impl Grid {
         }
     }
 
-    pub fn undo(&mut self, seq: u64) {
+    pub fn flip(&mut self, seq: u64) {
         self.remaining ^= seq;
     }
 }

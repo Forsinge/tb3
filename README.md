@@ -9,7 +9,7 @@ A example grid where you play the word "STAR" could look something like this:
 
 ![](images/grid.png)
 
-Please refrain from using this solver to cheat in word games, that's just no fun. This project 
+Please refrain from using this solver to cheat in word games, that's no fun. This project 
 was only done to challenge myself and to see if I could push it to be fast enough to solve 
 entire grids.
 
@@ -18,3 +18,8 @@ The dictionary should contain one word per line, all capital letters, sorted by 
 You then type in the letters of each grid row, and finally finish the input with an empty line.
 While the code does contain some stuff that is specific to Swedish, it should work for
 other languages as well (or at least easy to tweak to support other special letters).
+
+## Todos
+
+- Implement iterative version of `solve_puzzle`
+- Fix rare bug in `get_dict_tree` leading to infinite loops in `reconstruct_word`
